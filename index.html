@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html>
 <head>
@@ -84,3 +85,242 @@
     </script>
 </body>
 </html>
+=======
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atmospheric Weather | 3D</title>
+    <link rel="stylesheet" href="weathercss.css">
+    <style>
+        /* Essential layout overrides for 3D Earth */
+        #earth-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            pointer-events: auto;
+        }
+
+        body {
+            background: #000;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            height: 100vh;
+            perspective: 2800px;
+        }
+
+        /* Ambient Atmospheric Glow - sits behind the card but in front of Earth */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: 
+                radial-gradient(circle at 78% 42%, rgba(80, 200, 255, 0.25) 0%, transparent 55%),
+                radial-gradient(circle at 25% 75%, rgba(120, 220, 255, 0.12) 0%, transparent 60%);
+            z-index: -1;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="earth-container"></div>
+
+    <div class="card">
+        <div class="search">
+            <input type="text" placeholder="Enter city name" spellcheck="false">
+            <button id="searchBtn">
+                <img src="https://img.icons8.com/scribby/50/000000/search.png" alt="search">
+            </button>
+        </div>
+        
+        <div class="weather" style="display: none;">
+            <img src="https://img.icons8.com/3d-fluency/94/sun.png" class="weather-icon">
+            <h1 class="temp">--°C</h1>
+            <h2 class="city">--</h2>
+            
+            <div class="activity-box">
+                <p class="activity-label">Activity Recommendation</p>
+                <p class="activity-text">Scanning for the perfect vibe...</p>
+            </div>
+
+            <div class="details">
+                <div class="col">
+                    <img src="https://img.icons8.com/3d-fluency/94/windy-weather.png" alt="humidity">
+                    <div>
+                        <p class="humidity">--%</p>
+                        <p>Humidity</p>
+                    </div>
+                </div>
+                <div class="col">
+                    <img src="https://img.icons8.com/3d-fluency/94/wind.png" alt="wind">
+                    <div>
+                        <p class="wind">-- km/h</p>
+                        <p>Wind Speed</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="error" style="display: none; text-align: center; color: #ff6b6b; padding: 20px;">
+            City not found. Try another coordinate? 🛰️
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // ==================== THREE.JS 3D EARTH ENGINE ====================
+        let scene, camera, renderer, earth, clouds, controls;
+        let isEntranceFinished = false;
+        const container = document.getElementById('earth-container');
+
+        function initEarth() {
+            scene = new THREE.Scene();
+
+            // Camera: Start far left for the cinematic entrance
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.set(-6, 1, 9); 
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(renderer.domElement);
+
+            // Lighting
+            const ambient = new THREE.AmbientLight(0x404040, 1.5);
+            scene.add(ambient);
+
+            const sun = new THREE.DirectionalLight(0xffffff, 2.8);
+            sun.position.set(12, 6, 8);
+            scene.add(sun);
+
+            // Earth Mesh
+            const earthGeo = new THREE.SphereGeometry(2, 64, 64);
+            const earthMat = new THREE.MeshPhongMaterial({
+                map: new THREE.TextureLoader().load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_atmos_2048.jpg'),
+                bumpMap: new THREE.TextureLoader().load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_normal_2048.jpg'),
+                bumpScale: 0.18,
+                specularMap: new THREE.TextureLoader().load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_specular_2048.jpg'),
+                specular: 0x333333,
+                shininess: 12
+            });
+            earth = new THREE.Mesh(earthGeo, earthMat);
+            scene.add(earth);
+
+            // Cloud Layer
+            const cloudGeo = new THREE.SphereGeometry(2.03, 64, 64);
+            const cloudMat = new THREE.MeshPhongMaterial({
+                map: new THREE.TextureLoader().load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_clouds_1024.png'),
+                transparent: true,
+                opacity: 0.85,
+                depthWrite: false
+            });
+            clouds = new THREE.Mesh(cloudGeo, cloudMat);
+            scene.add(clouds);
+
+            // Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 0.35;
+            controls.enableZoom = true;
+            controls.minDistance = 3.8;
+            controls.maxDistance = 12;
+
+            window.addEventListener('resize', onWindowResize);
+            animate();
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Cinematic Entrance Logic: Move camera to hero position on the right
+            if (!isEntranceFinished) {
+                camera.position.x += (2.2 - camera.position.x) * 0.012;
+                camera.position.y += (0 - camera.position.y) * 0.012;
+                camera.position.z += (5.8 - camera.position.z) * 0.012;
+                
+                if (Math.abs(camera.position.x - 2.2) < 0.01) isEntranceFinished = true;
+            }
+
+            // Independent subtle rotations
+            if (earth) earth.rotation.y += 0.0006;
+            if (clouds) clouds.rotation.y += 0.0009;
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // ==================== WEATHER LOGIC ====================
+        const apikey = "ae9b1f3330d0ab1b30634ee00a98143c";
+        const apiurl = "https://api.openweathermap.org/data/2.5/weather?units=metric&q=";
+
+        const searchBox = document.querySelector(".search input");
+        const searchBtn = document.querySelector("#searchBtn");
+        const weatherIcon = document.querySelector(".weather-icon");
+        const activityText = document.querySelector(".activity-text");
+
+        async function checkWeather(city) {
+            const response = await fetch(apiurl + city + `&appid=${apikey}`);
+            
+            if (response.status == 404) {
+                document.querySelector(".error").style.display = "block";
+                document.querySelector(".weather").style.display = "none";
+            } else {
+                const data = await response.json();
+
+                document.querySelector(".city").textContent = data.name;
+                document.querySelector(".temp").textContent = Math.round(data.main.temp) + "°C";
+                document.querySelector(".humidity").textContent = data.main.humidity + "%";
+                document.querySelector(".wind").textContent = data.wind.speed + " km/h";
+
+                const condition = data.weather[0].main;
+                let recommendation = "";
+
+                // Tailored activity logic
+                if (condition == "Clouds") {
+                    weatherIcon.src = "https://img.icons8.com/3d-fluency/94/partly-cloudy-day.png";
+                    recommendation = "Soft light today. Perfect for digital art or some focused coding with a view of the sky. ☁️🎨";
+                } else if (condition == "Rain") {
+                    weatherIcon.src = "https://img.icons8.com/3d-fluency/94/storm.png";
+                    recommendation = "Heavy rain outside. Stay cozy, grab a coffee, and dive into your latest Python project. ☕🐍";
+                } else if (condition == "Clear") {
+                    weatherIcon.src = "https://img.icons8.com/3d-fluency/94/sun.png";
+                    recommendation = "Clear skies! High visibility. Great time to clear your mind with a walk or test some outdoor tech. ☀️🚀";
+                } else {
+                    weatherIcon.src = "https://img.icons8.com/3d-fluency/94/sun.png";
+                    recommendation = "The weather is shifting. Why not explore some local spots or try a new recipe? 🍕";
+                }
+
+                activityText.textContent = recommendation;
+                document.querySelector(".weather").style.display = "block";
+                document.querySelector(".error").style.display = "none";
+            }
+        }
+
+        searchBtn.addEventListener("click", () => checkWeather(searchBox.value));
+        searchBox.addEventListener("keypress", (e) => { 
+            if (e.key === "Enter") checkWeather(searchBox.value); 
+        });
+
+        window.onload = initEarth;
+    </script>
+</body>
+</html>
+>>>>>>> 38664ac (Initial commit)
