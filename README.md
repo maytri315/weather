@@ -1,7 +1,7 @@
 # 🌍 Atmospheric Weather 3D
 **A high-fidelity, interactive 3D weather experience built with Three.js and the OpenWeatherMap API.**
 
-[Live Demo](https://maytri315.github.io/weather/)
+https://maytri315.github.io/weather/
 
 ---
 
